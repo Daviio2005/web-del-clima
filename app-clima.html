@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Clima por Ciudad</title>
+    <link rel="stylesheet" href="clima.css">
+</head>
+
+<body>
+    <h1>Consulta el clima</h1>
+
+    <input type="text" id="ciudadInput" placeholder="Escribe una ciudad" />
+    <button onclick="obtenerClima()">Buscar</button>
+
+    <div id="cargando">
+        <div class="spinner"></div>
+        <p>Consultando clima...</p>
+    </div>
+
+    <div id="clima"></div>
+    <div id="mensaje"></div>
+    <div id="horaLocal"></div>
+
+    <script src="clima.js"></script>
+</body>
+
+</html>
