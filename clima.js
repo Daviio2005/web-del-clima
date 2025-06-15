@@ -1,14 +1,42 @@
 const apiKey = '4a623e65c4294c4daec225448251306';
 
+function normalizarTexto(texto) {
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function obtenerDepartamento(ciudad) {
+    const ciudadNormalizada = normalizarTexto(ciudad);
+    const capitalesEspeciales = {
+        "bogota": "Bogotá D.C., Cundinamarca",
+        "san andres": "San Andrés y Providencia",
+        "providencia": "San Andrés y Providencia"
+    };
+
+    if (capitalesEspeciales[ciudadNormalizada]) return capitalesEspeciales[ciudadNormalizada];
+
+    const index = ciudades.findIndex(item => normalizarTexto(item) === ciudadNormalizada);
+    if (index > 0) {
+        for (let i = index - 1; i >= 0; i--) {
+            if (ciudades[i][0] === ciudades[i][0].toUpperCase()) {
+                return ciudades[i];
+            }
+        }
+    }
+
+    return "Departamento no encontrado";
+}
+
 function obtenerClima() {
     const ciudad = document.getElementById('ciudadInput').value.trim();
     const mensaje = document.getElementById('mensaje');
     const loader = document.getElementById('cargando');
     const horaDiv = document.getElementById('horaLocal');
+    const climaDiv = document.getElementById('clima');
+
+    mensaje.textContent = "";
+    horaDiv.innerHTML = "";
+    climaDiv.innerHTML = "";
     loader.style.display = 'block';
-    horaDiv.innerHTML = '';
-    mensaje.innerHTML = '';
-    document.getElementById('clima').innerHTML = '';
 
     if (ciudad === "") {
         alert("Por favor ingresa una ciudad");
@@ -16,8 +44,7 @@ function obtenerClima() {
         return;
     }
 
-    const ciudadCodificada = encodeURIComponent(ciudad);
-    const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${ciudadCodificada}&lang=es`;
+    const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${encodeURIComponent(ciudad)}&lang=es`;
 
     fetch(url)
         .then(res => res.json())
@@ -25,74 +52,108 @@ function obtenerClima() {
             loader.style.display = 'none';
 
             if (data.error) {
-                document.getElementById('clima').innerHTML = `<p>${data.error.message}</p>`;
+                climaDiv.innerHTML = `<p>${data.error.message}</p>`;
                 return;
             }
 
-            let pais = data.location.country;
-            if (data.location.name.toLowerCase() === "bogotá" && pais !== "Colombia") {
-                pais = "Colombia";
-            }
-
             const condicion = data.current.condition.text.toLowerCase();
-            const isDay = data.current.is_day === 1;
-            const claseIcono = isDay ? "clima-icono" : "clima-icono noche";
-
-            // Obtener fecha y hora local
-            const fechaHoraStr = data.location.localtime; // "YYYY-MM-DD HH:MM"
-            const [fechaStr, horaStr] = fechaHoraStr.split(" ");
-
+            const iconoClase = data.current.is_day ? "clima-icono" : "clima-icono noche";
+            const [fechaStr, horaStr] = data.location.localtime.split(" ");
             const fechaObj = new Date(`${fechaStr}T${horaStr}`);
-
-            const opcionesFecha = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            };
-
-            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', opcionesFecha);
+            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
             const horaFormateada = fechaObj.toLocaleTimeString('es-CO', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
+                hour: 'numeric', minute: '2-digit', hour12: true
             });
 
-            const mensajesPorClima = {
-                "soleado": "☀️ ¡Día soleado y radiante! Ideal para salir y disfrutar del buen clima.",
-                "lluvia moderada": "🌧️ Está cayendo una lluvia moderada. No olvides tu paraguas si vas a salir.",
-                "lluvia ligera": "🌦️ Lluvias ligeras acompañan el día. Un paraguas será tu mejor aliado.",
-                "lluvia fuerte": "⛈️ Lluvias fuertes en camino. Es mejor quedarse bajo techo si puedes.",
-                "nublado": "☁️ Cielo nublado, sin sol a la vista. Tal vez sea un buen día para relajarse en casa.",
-                "parcialmente nublado": "⛅ Algunas nubes cubren el cielo, pero el sol aún se deja ver. ¡Buen equilibrio!",
-                "despejado": "🌞 Cielo despejado y sin una nube. ¡Perfecto para disfrutar al aire libre!",
-                "nevando": "❄️ Está nevando. ¡Ambiente mágico! Abrígate bien si vas a salir.",
-                "tormenta": "🌩️ Tormenta activa. Es recomendable mantenerse resguardado y evitar salir.",
-                "bruma": "🌫️ Bruma densa. Maneja con cuidado y mantén las luces encendidas.",
-                "cubierto": "🌥️ El cielo está completamente cubierto. Podrían venir lluvias más tarde."
+            const mensajes = {
+                "soleado": "☀️ ¡Día soleado y radiante!",
+                "lluvia moderada": "🌧️ Está lloviendo moderadamente.",
+                "lluvia ligera": "🌦️ Lluvia ligera presente.",
+                "lluvia fuerte": "⛈️ Mucha lluvia. ¡Ten cuidado!",
+                "nublado": "☁️ Día nublado.",
+                "parcialmente nublado": "⛅ Nubes y claros.",
+                "despejado": "🌞 Cielo totalmente despejado.",
+                "nevando": "❄️ Está nevando.",
+                "tormenta": "🌩️ Hay tormenta.",
+                "bruma": "🌫️ Bruma densa.",
+                "cubierto": "🌥️ Cielo cubierto."
             };
 
-            const mensajeExtra = mensajesPorClima[condicion] || "🌡️ Consulta el clima antes de salir.";
+            const mensajeExtra = mensajes[condicion] || "🌡️ Consulta el clima antes de salir.";
+            const departamento = obtenerDepartamento(data.location.name);
+            const pais = data.location.country === "Colombia" ? "Colombia" : data.location.country;
 
-            document.getElementById('clima').innerHTML = `
-              <h2>Clima en ${data.location.name}, ${pais}</h2>
-              <p>Temperatura: ${data.current.temp_c}°C</p>
-              <p>Condición: ${data.current.condition.text}</p>
-              <img src="https:${data.current.condition.icon}" class="${claseIcono}" alt="icono clima">
-          `;
+            climaDiv.innerHTML = `
+                <h2>${data.location.name}, ${departamento}</h2>
+                <p><strong>País:</strong> ${pais}</p>
+                <p><strong>Temperatura:</strong> ${data.current.temp_c}°C</p>
+                <p><strong>Condición:</strong> ${data.current.condition.text}</p>
+                <img src="https:${data.current.condition.icon}" class="${iconoClase}" alt="icono clima">
+            `;
 
-            mensaje.innerHTML = mensajeExtra;
+            mensaje.textContent = mensajeExtra;
             horaDiv.innerHTML = `📅 ${fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1)}<br>🕒 Hora local: ${horaFormateada}`;
         })
-        .catch(error => {
+        .catch(err => {
             loader.style.display = 'none';
-            console.error("Error:", error);
-            document.getElementById('clima').innerHTML = "<p>Error al obtener datos del clima</p>";
+            climaDiv.innerHTML = "<p>Error al obtener datos del clima.</p>";
+            console.error(err);
         });
 }
 
 document.getElementById('ciudadInput').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        obtenerClima();
+    if (e.key === 'Enter') obtenerClima();
+});
+
+// ------------------------- Autocompletado -------------------------
+
+const ciudades = [
+  "Bogotá", "Cundinamarca", "Medellín", "Antioquia", "Cali", "Valle del Cauca",
+  "Barranquilla", "Atlántico", "Cartagena", "Bolívar", "Cúcuta", "Norte de Santander",
+  "Bucaramanga", "Santander", "Pereira", "Risaralda", "Manizales", "Caldas", "Ibagué", "Tolima",
+  "Santa Marta", "Magdalena", "Villavicencio", "Meta", "Neiva", "Huila", "Armenia", "Quindío",
+  "Sincelejo", "Sucre", "San Andrés", "Providencia"
+];
+
+const inputCiudad = document.getElementById("ciudadInput");
+const listaSugerencias = document.getElementById("listaSugerencias");
+
+inputCiudad.addEventListener("input", () => {
+    const valor = inputCiudad.value.toLowerCase();
+    listaSugerencias.innerHTML = "";
+
+    if (!valor) {
+        listaSugerencias.style.display = "none";
+        return;
+    }
+
+    const sugerencias = ciudades.filter(ciudad =>
+        ciudad.toLowerCase().startsWith(valor)
+    );
+
+    if (sugerencias.length === 0) {
+        listaSugerencias.style.display = "none";
+        return;
+    }
+
+    sugerencias.forEach(ciudad => {
+        const li = document.createElement("li");
+        li.textContent = ciudad;
+        li.addEventListener("click", () => {
+            inputCiudad.value = ciudad;
+            listaSugerencias.innerHTML = "";
+            listaSugerencias.style.display = "none";
+        });
+        listaSugerencias.appendChild(li);
+    });
+
+    listaSugerencias.style.display = "block";
+});
+
+document.addEventListener("click", (e) => {
+    if (!document.querySelector(".buscador").contains(e.target)) {
+        listaSugerencias.style.display = "none";
     }
 });
