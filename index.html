@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1e90ff"> <!-- Aquí cambia el color -->
-    <title>Clima por Ciudad</title>
-    <link rel="stylesheet" href="clima.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e90ff" />
+  <title>Clima por Ciudad</title>
+  <link rel="stylesheet" href="clima.css" />
 </head>
-
 <body>
-    <h1>Consulta el clima</h1>
+  <main class="container fade-in">
+    <h1>🌤️ Consulta el clima en tu ciudad</h1>
 
-    <input type="text" id="ciudadInput" placeholder="Escribe una ciudad" />
-    <button onclick="obtenerClima()">Buscar</button>
-
-    <div id="cargando">
-        <div class="spinner"></div>
-        <p>Consultando clima...</p>
+    <div class="buscador">
+      <input type="text" id="ciudadInput" placeholder="Escribe una ciudad..." autocomplete="off" />
+      <ul id="listaSugerencias" class="sugerencias"></ul>
     </div>
 
-    <div id="clima"></div>
-    <div id="mensaje"></div>
+    <button onclick="obtenerClima()">🔍 Buscar</button>
+
+    <div id="cargando">
+      <div class="spinner"></div>
+      <p>Consultando clima...</p>
+    </div>
+
+    <section id="clima" class="card"></section>
+    <div id="mensaje" class="mensaje"></div>
     <div id="horaLocal"></div>
+  </main>
 
-    <script src="clima.js"></script>
+  <script src="clima.js"></script>
 </body>
-
 </html>
